@@ -4,7 +4,7 @@ import sys
 from PyQt5.QtMultimedia import QMediaPlayer,QMediaContent
 from PyQt5.QtMultimediaWidgets import QVideoWidget
 from PyQt5.QtGui import QPixmap
-from PyQt5.QtCore import Qt,QUrl,QPoint,QTime
+from PyQt5.QtCore import Qt,QUrl,QTime
 
 class Window(QWidget):
   def __init__(self, parent=None):
@@ -32,17 +32,38 @@ class Window(QWidget):
     # create open button
     self.openbtn = QPushButton('Open Video', self)  
     self.openbtn.setIcon(QIcon('icons/open.png'))
-    self.openbtn.setFixedHeight(30);
+    self.openbtn.setFixedHeight(25);
     self.openbtn.setMaximumWidth(100);
     self.openbtn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Minimum)
     self.openbtn.setStyleSheet('background-color : black ; color : white')
     self.openbtn.clicked.connect(self.open_file)
 
+
+    self.displaybtn = QMenuBar()
+    actionFile = self.displaybtn.addMenu(QIcon('icons/display.png'),'Setting')
+    self.displaybtn.setStyleSheet('background-color : black; color : white')
+    actionFile.addAction("Full Screen")
+    actionFile.addSeparator()
+    AspectMenu = QMenu('Aspect Ratio', self)
+    Aspect169 = QAction('16:9', self)
+    AspectMenu.addAction(Aspect169)
+    Aspect169.triggered.connect(self.screen169)
+    Aspect43 = QAction('4:3', self)
+    AspectMenu.addAction(Aspect43)
+    Aspect43.triggered.connect(self.screen43)
+
+    actionFile.addMenu(AspectMenu)
+    AspectMenu.setStyleSheet('background-color : black; color : white')
+    
+    self.displaybtn.setFixedHeight(25)
+    self.displaybtn.setMaximumWidth(200)
+    self.displaybtn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Minimum)
+
     #create settings button dropdown
     
-    settingbtn = QMenuBar()
-    actionFile = settingbtn.addMenu(QIcon('icons/settings.png'),'&Setting')
-    settingbtn.setStyleSheet('background-color : black; color : white')
+    self.settingbtn = QMenuBar()
+    actionFile = self.settingbtn.addMenu(QIcon('icons/settings.png'),'Setting')
+    self.settingbtn.setStyleSheet('background-color : black; color : white')
     actionFile.addAction("New")
     actionFile.addAction("Open")
     actionFile.addAction("Save")
@@ -52,10 +73,12 @@ class Window(QWidget):
     exit.setStatusTip('Exit application')
     exit.triggered.connect(app.quit)
     actionFile.addAction(exit) 
+    
 
-    settingbtn.setFixedHeight(30)
-    settingbtn.setMaximumWidth(200)
-    settingbtn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Minimum)
+    self.settingbtn.setFixedHeight(25)
+    self.settingbtn.setMaximumWidth(200)
+    self.settingbtn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Minimum)
+
 
     # create button for playing
     self.playbtn = QPushButton()
@@ -109,6 +132,13 @@ class Window(QWidget):
     self.sld.setMaximumWidth(100);
     self.sld.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
         
+    # fullscreen toggle
+    self.screenbtn = QPushButton()
+    self.screenbtn.setEnabled(True)
+    self.screenbtn.setStyleSheet('background-color : black')
+    self.screenbtn.setIcon(QIcon('icons/full-screen.png'))
+    self.screenbtn.clicked.connect(self.handleFullscreen)
+  
 
     #create label
     self.label = QLabel()
@@ -129,17 +159,17 @@ class Window(QWidget):
     hboxLayout.addWidget(self.slider)
     hboxLayout.addWidget(self.elbl)
     hboxLayout.addWidget(self.vlabel)
-    hboxLayout.addWidget(self.sld )
+    hboxLayout.addWidget(self.sld)
+    hboxLayout.addWidget(self.screenbtn)
 
     # topbox
 
     tboxLayout=QHBoxLayout()
     tboxLayout.setAlignment(Qt.AlignLeft)
     tboxLayout.addWidget(self.openbtn)
-    tboxLayout.addWidget(settingbtn)
-
-
-
+    tboxLayout.addWidget(self.displaybtn)
+    tboxLayout.addWidget(self.settingbtn)
+  
     #create vbox layout 
     vboxlayout = QVBoxLayout()
     vboxlayout.addLayout(tboxLayout)
@@ -264,16 +294,36 @@ class Window(QWidget):
   def backSlider10(self):
     self.mediaPlayer.setPosition(self.mediaPlayer.position() - 1000*60)
   
-  # full screen on double click
+  # full screen on double click & button
   def handleFullscreen(self):
     if self.windowState() & Qt.WindowFullScreen:
       QApplication.setOverrideCursor(Qt.ArrowCursor)
+      self.screenbtn.setIcon(QIcon('icons/full-screen.png'))
       self.showNormal()
       print("no Fullscreen")
     else:
       self.showFullScreen()
-      QApplication.setOverrideCursor(Qt.BlankCursor)
+      QApplication.setOverrideCursor(Qt.ArrowCursor)
+      self.screenbtn.setIcon(QIcon('icons/full-screen-exit.png'))
       print("Fullscreen entered")
+
+  def screen169(self):
+    self.widescreen = True
+    mwidth = self.frameGeometry().width()
+    mheight = self.frameGeometry().height()
+    mleft = self.frameGeometry().left()
+    mtop = self.frameGeometry().top()
+    mratio = 1.778
+    self.setGeometry(mleft, mtop, mwidth, round(mwidth / mratio))
+
+  def screen43(self):
+    self.widescreen = False
+    mwidth = self.frameGeometry().width()
+    mheight = self.frameGeometry().height()
+    mleft = self.frameGeometry().left()
+    mtop = self.frameGeometry().top()
+    mratio = 1.33
+    self.setGeometry(mleft, mtop, mwidth, round(mwidth / mratio))
 
   def toggleSlider(self):    
     if self.slider.isVisible():
@@ -284,6 +334,7 @@ class Window(QWidget):
   def hideSlider(self):
     self.openbtn.hide()
     self.settingbtn.hide()
+    self.displaybtn.hide()
     self.bbtn.hide()
     self.playbtn.hide()
     self.fbtn.hide()
@@ -291,10 +342,14 @@ class Window(QWidget):
     self.vlabel.hide()
     self.slider.hide()
     self.sld.hide()
+    self.screenbtn.hide()
+    self.lbl.hide()
+    self.elbl.hide()    
   
   def showSlider(self):
     self.openbtn.show()
-    self.settingbtn.show()
+    self.settingbtn.hide()
+    self.displaybtn.hide()
     self.bbtn.show()
     self.playbtn.show()
     self.fbtn.show()
@@ -302,7 +357,9 @@ class Window(QWidget):
     self.vlabel.show()
     self.slider.show()
     self.sld.show()
-
+    self.screenbtn.show()
+    self.lbl.show()
+    self.elbl.show() 
 
 app = QApplication(sys.argv)
 window = Window()
