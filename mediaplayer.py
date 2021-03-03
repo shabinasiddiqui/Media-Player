@@ -13,6 +13,7 @@ class Window(QWidget):
     self.setWindowTitle("Media Player")
     self.setGeometry(450, 200, 1000, 700)
     self.setWindowIcon(QIcon('icons/icon.png'))
+    
 
     palette = self.palette()
     palette.setColor(QPalette.Window, Qt.black)
