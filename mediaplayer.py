@@ -11,6 +11,7 @@ class InfoDialog(QDialog):
     super().__init__(parent=parent)
 
     self.setWindowTitle("Info (shortcuts)")
+    self.setGeometry(800, 400, 300, 300)
 
     self.layout = QVBoxLayout()
     m1 = QLabel("FullScreen     -  F / Double Click")
@@ -23,6 +24,7 @@ class InfoDialog(QDialog):
     m8 = QLabel("Backward 1min  -  Shift + ←")
     m9 = QLabel("Volume UP      -  ↑")
     m10 = QLabel("Volume UP     -  ↓")
+    m11 = QLabel("Mute          -  Ctrl + M")
     
     self.layout.addWidget(m1)
     self.layout.addWidget(m2)
@@ -34,6 +36,7 @@ class InfoDialog(QDialog):
     self.layout.addWidget(m8)
     self.layout.addWidget(m9)
     self.layout.addWidget(m10)
+    self.layout.addWidget(m11)
     self.setLayout(self.layout)
 
 class Window(QWidget):
@@ -73,19 +76,20 @@ class Window(QWidget):
     self.mediabtn = QMenuBar()
     actionFile = self.mediabtn.addMenu(QIcon('icons/media.png'),'Media')
     self.mediabtn.setStyleSheet('background-color : black; color : white')
+    
     actionFile.addSeparator()
 
     PlaybackMenu = QMenu('Playback', self)
-    Forward10 = QAction('Forward 10sec', self)
+    Forward10 = QAction(QIcon('icons/forward.png'),'Forward 10sec', self)
     PlaybackMenu.addAction(Forward10)
     Forward10.triggered.connect(self.forwardSlider)
-    Forward1 = QAction('Forward 1min', self)
+    Forward1 = QAction(QIcon('icons/forward.png'),'Forward 1min', self)
     PlaybackMenu.addAction(Forward1)
     Forward1.triggered.connect(self.forwardSlider10)    
-    Backward10 = QAction('Backward 10sec', self)
+    Backward10 = QAction(QIcon('icons/backward.png'),'Backward 10sec', self)
     PlaybackMenu.addAction(Backward10)
     Backward10.triggered.connect(self.backSlider)
-    Backward1 = QAction('Backward 1min', self)
+    Backward1 = QAction(QIcon('icons/backward.png'),'Backward 1min', self)
     PlaybackMenu.addAction(Backward1)
     Backward1.triggered.connect(self.backSlider10)
 
@@ -96,18 +100,13 @@ class Window(QWidget):
     actionFile.addAction(VolumeDecrease)
     VolumeDecrease.triggered.connect(self.volumeDown)
     VolumeMute = QAction(QIcon('icons/mute.png'),'Volume Mute', self)
+    VolumeMute.setShortcut('Ctrl+M')
     actionFile.addAction(VolumeMute)
     VolumeMute.triggered.connect(self.volumeMute)
 
-    while self.mediabtn.is_pressed():
-      if self.mediaPlayer.state() == QMediaPlayer.PlayingState:
-        Play = QAction(QIcon('icons/pause.png'),'Pause', self)
-        actionFile.addAction(Play)
-        Play.triggered.connect(self.play_video)
-      else:
-        Pause = QAction(QIcon('icons/play.png'),'Play', self)
-        actionFile.addAction(Pause)
-        Pause.triggered.connect(self.play_video)
+    self.Play = QAction(QIcon('icons/play.png'),'Play/Pause', self)
+    actionFile.addAction(self.Play)
+    self.Play.triggered.connect(self.play_video)
 
     actionFile.addMenu(PlaybackMenu)
     PlaybackMenu.setStyleSheet('background-color : black; color : white')
@@ -122,6 +121,8 @@ class Window(QWidget):
     actionFile = self.displaybtn.addMenu(QIcon('icons/display.png'),'Setting')
     self.displaybtn.setStyleSheet('background-color : black; color : white')
     full = QAction('Full Screen', self)
+    full.setShortcut('F')
+    full.triggered.connect(self.handleFullscreen)
     actionFile.addAction(full)
     actionFile.addSeparator()
 
@@ -162,6 +163,10 @@ class Window(QWidget):
     self.settingbtn.setMaximumWidth(200)
     self.settingbtn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Minimum)
 
+    self.stopbtn = QPushButton()
+    self.stopbtn.setStyleSheet('background-color : black')
+    self.stopbtn.setIcon(QIcon('icons/stop.png'))
+    self.stopbtn.clicked.connect(self.stop_video)
 
     # create button for playing
     self.playbtn = QPushButton()
@@ -188,6 +193,7 @@ class Window(QWidget):
     self.slider.setFocusPolicy(Qt.NoFocus)
     self.slider.setRange(0,0)
     self.slider.sliderMoved.connect(self.set_position)
+    self.slider.setStyleSheet (self.stylesheet())
 
     self.lbl = QLineEdit('00:00:00')
     
@@ -214,6 +220,7 @@ class Window(QWidget):
     self.sld.sliderMoved.connect(self.set_volume)
     self.sld.setMaximumWidth(100);
     self.sld.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+    self.sld.setStyleSheet (self.stylesheet())
         
     # fullscreen toggle
     self.screenbtn = QPushButton()
@@ -237,8 +244,9 @@ class Window(QWidget):
     hboxLayout = QHBoxLayout()
 
     # set widgets to the hbox layout
-    hboxLayout.addWidget(self.bbtn)
     hboxLayout.addWidget(self.playbtn)
+    hboxLayout.addWidget(self.bbtn)
+    hboxLayout.addWidget(self.stopbtn)
     hboxLayout.addWidget(self.fbtn)
     hboxLayout.addWidget(self.lbl)
     hboxLayout.addWidget(self.slider)
@@ -269,8 +277,7 @@ class Window(QWidget):
 
     self.mediaPlayer.stateChanged.connect(self.mediastate_changed)
     self.mediaPlayer.positionChanged.connect(self.position_changed)
-    self.mediaPlayer.durationChanged.connect(self.duration_changed)
-    # self.mediaPlayer.positionChanged.connect(self.volume_changed)  
+    self.mediaPlayer.durationChanged.connect(self.duration_changed) 
 
     self.videowidget = True
       
@@ -292,8 +299,11 @@ class Window(QWidget):
     self.shortcut = QShortcut(QKeySequence(Qt.ShiftModifier +  Qt.Key_Left) , self)
     self.shortcut.activated.connect(self.backSlider10)
 
+  # function section   
 
-  # function section    
+  def stop_video(self):
+    if self.mediaPlayer.state() == QMediaPlayer.PlayingState:
+      self.mediaPlayer.stop() 
   
   def open_info_dialog(self):
 
@@ -322,8 +332,14 @@ class Window(QWidget):
       self.playbtn.setIcon(
         QIcon('icons/pause.png')
       )
+      self.Play.setIcon(
+        QIcon('icons/pause.png')
+      )
     else:
       self.playbtn.setIcon(
+        QIcon('icons/play.png')
+      )
+      self.Play.setIcon(
         QIcon('icons/play.png')
       )
 
@@ -368,20 +384,31 @@ class Window(QWidget):
         self.vlabel.setIcon(QIcon('icons/max.png'))
 
   def volumeMute(self):
+    vol=self.mediaPlayer.volume()
     if self.mediaPlayer.isMuted():
       self.mediaPlayer.setMuted(False)
-      self.mediaPlayer.setVolume(100)
-      self.vlabel.setIcon(QIcon('icons/max.png'))
+      self.sld.setSliderPosition(int(self.mediaPlayer.volume()))
+      self.volume = vol
+      if self.volume == 0:
+        self.vlabel.setIcon(QIcon('icons/mute.png'))
+      elif 0 < self.volume <= 30:
+        self.vlabel.setIcon(QIcon('icons/min.png'))
+      elif 30 < self.volume < 80:
+        self.vlabel.setIcon(QIcon('icons/med.png'))
+      else:
+        self.vlabel.setIcon(QIcon('icons/max.png'))
     else:
       self.mediaPlayer.setMuted(True)
       self.vlabel.setIcon(QIcon('icons/mute.png'))
 
   def volumeUp(self):
     self.mediaPlayer.setVolume(self.mediaPlayer.volume() + 10)
+    self.sld.setSliderPosition(int(self.mediaPlayer.volume()))
     print("Volume: " + str(self.mediaPlayer.volume()))
     
   def volumeDown(self):
-    self.mediaPlayer.setVolume(self.mediaPlayer.volume() - 10)  
+    self.mediaPlayer.setVolume(self.mediaPlayer.volume() - 10)
+    self.sld.setSliderPosition(int(self.mediaPlayer.volume()))  
     print("Volume: " + str(self.mediaPlayer.volume()))
 
   def forwardSlider(self):
@@ -435,6 +462,7 @@ class Window(QWidget):
     
   def hideSlider(self):
     self.openbtn.hide()
+    self.mediabtn.hide()
     self.settingbtn.hide()
     self.displaybtn.hide()
     self.bbtn.hide()
@@ -450,6 +478,7 @@ class Window(QWidget):
   
   def showSlider(self):
     self.openbtn.show()
+    self.mediabtn.show()
     self.settingbtn.show()
     self.displaybtn.show()
     self.bbtn.show()
@@ -462,6 +491,62 @@ class Window(QWidget):
     self.screenbtn.show()
     self.lbl.show()
     self.elbl.show() 
+  
+  def stylesheet(self):
+    return """
+            QSlider::handle:horizontal 
+            {
+            background: transparent;
+            width: 8px;
+            }
+
+            QSlider::groove:horizontal {
+            border: 1px solid #444444;
+            height: 8px;
+              background: qlineargradient(y1: 0, y2: 1,
+                            stop: 0 #2e3436, stop: 1.0 #000000);
+            }
+
+            QSlider::sub-page:horizontal {
+            background: qlineargradient( y1: 0, y2: 1,
+                stop: 0 #729fcf, stop: 1 #2a82da);
+            border: 1px solid #777;
+            height: 8px;
+            }
+
+            QSlider::handle:horizontal:hover {
+            background: #2a82da;
+            height: 8px;
+            width: 18px;
+            border: 1px solid #2e3436;
+            }
+
+            QSlider::sub-page:horizontal:disabled {
+            background: #bbbbbb;
+            border-color: #999999;
+            }
+
+            QSlider::add-page:horizontal:disabled {
+            background: #2a82da;
+            border-color: #999999;
+            }
+
+            QSlider::handle:horizontal:disabled {
+            background: #2a82da;
+            }
+
+            QLineEdit
+            {
+            background: black;
+            color: #585858;
+            border: 0px solid #076100;
+            font-size: 8pt;
+            font-weight: bold;
+            }
+            QAction QIcon{
+              size:15px;
+            }
+          """
 
 app = QApplication(sys.argv)
 window = Window()
