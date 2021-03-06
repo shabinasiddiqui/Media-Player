@@ -4,7 +4,7 @@ import sys
 from PyQt5.QtMultimedia import QMediaPlayer,QMediaContent
 from PyQt5.QtMultimediaWidgets import QVideoWidget
 from PyQt5.QtGui import QPixmap
-from PyQt5.QtCore import Qt,QUrl,QTime
+from PyQt5.QtCore import Qt,QUrl,QTime, qQNaN
 
 class InfoDialog(QDialog):
   def __init__(self, parent=None):
@@ -100,7 +100,6 @@ class Window(QWidget):
     actionFile.addAction(VolumeDecrease)
     VolumeDecrease.triggered.connect(self.volumeDown)
     VolumeMute = QAction(QIcon('icons/mute.png'),'Volume Mute', self)
-    VolumeMute.setShortcut('Ctrl+M')
     actionFile.addAction(VolumeMute)
     VolumeMute.triggered.connect(self.volumeMute)
 
@@ -121,7 +120,6 @@ class Window(QWidget):
     actionFile = self.displaybtn.addMenu(QIcon('icons/display.png'),'Setting')
     self.displaybtn.setStyleSheet('background-color : black; color : white')
     full = QAction('Full Screen', self)
-    full.setShortcut('F')
     full.triggered.connect(self.handleFullscreen)
     actionFile.addAction(full)
     actionFile.addSeparator()
@@ -284,7 +282,7 @@ class Window(QWidget):
     #shortcuts
     self.shortcut = QShortcut(QKeySequence('Ctrl+O'), self)
     self.shortcut.activated.connect(self.open_file)
-    self.shortcut = QShortcut(QKeySequence('h'), self)
+    self.shortcut = QShortcut(QKeySequence('H'), self)
     self.shortcut.activated.connect(self.toggleSlider)
     self.shortcut = QShortcut(QKeySequence(Qt.Key_Up), self)
     self.shortcut.activated.connect(self.volumeUp)
@@ -298,6 +296,12 @@ class Window(QWidget):
     self.shortcut.activated.connect(self.forwardSlider10)
     self.shortcut = QShortcut(QKeySequence(Qt.ShiftModifier +  Qt.Key_Left) , self)
     self.shortcut.activated.connect(self.backSlider10)
+    self.fullshortcut = QShortcut(QKeySequence('F'), self)
+    self.fullshortcut.activated.connect(self.handleFullscreen)
+    self.Playshortcut = QShortcut(QKeySequence('Space'), self)
+    self.Playshortcut.activated.connect(self.play_video)
+    self.VolumeMuteshortcut = QShortcut(QKeySequence('Ctrl+M'), self)
+    self.VolumeMuteshortcut.activated.connect(self.volumeMute)
 
   # function section   
 
@@ -365,10 +369,7 @@ class Window(QWidget):
 
   def set_volume(self, position):
     self.mediaPlayer.setVolume(position)
-  
-  # def volume_changed(self, position):
-  #   self.sld.setValue(position)
-
+    
   def changeValue(self, value):
     if self.mediaPlayer.isMuted():
       self.vlabel.setIcon(QIcon('icons/mute.png'))
@@ -463,34 +464,39 @@ class Window(QWidget):
   def hideSlider(self):
     self.openbtn.hide()
     self.mediabtn.hide()
-    self.settingbtn.hide()
     self.displaybtn.hide()
-    self.bbtn.hide()
+    self.settingbtn.hide()
     self.playbtn.hide()
+    self.bbtn.hide()
+    self.stopbtn.hide()
     self.fbtn.hide()
-    self.label.hide()
-    self.vlabel.hide()
+    self.lbl.hide()
     self.slider.hide()
+    self.elbl.hide()
+    self.vlabel.hide()  
     self.sld.hide()
     self.screenbtn.hide()
-    self.lbl.hide()
-    self.elbl.hide()    
+         
+    self.label.hide()  
   
   def showSlider(self):
     self.openbtn.show()
     self.mediabtn.show()
-    self.settingbtn.show()
     self.displaybtn.show()
-    self.bbtn.show()
+    self.settingbtn.show()
     self.playbtn.show()
+    self.bbtn.show()
+    self.stopbtn.show()
     self.fbtn.show()
-    self.label.show()
-    self.vlabel.show()
+    self.lbl.show()
     self.slider.show()
+    self.elbl.show()
+    self.vlabel.show()
     self.sld.show()
     self.screenbtn.show()
-    self.lbl.show()
-    self.elbl.show() 
+    
+    self.label.show()
+     
   
   def stylesheet(self):
     return """
